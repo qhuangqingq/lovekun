@@ -3,8 +3,9 @@ package com.example.lovekun.config.mybatisPlus;
 
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import org.apache.ibatis.reflection.MetaObject;
+import org.springframework.stereotype.Component;
 
-
+@Component
 public class MyMetaObjectHandler implements MetaObjectHandler {
 
     /**
@@ -13,13 +14,10 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
      */
     @Override
     public void insertFill(MetaObject metaObject) {
-        // 获取公共字段的值
-        Object fieldValue = getFieldValByName("age", metaObject);
-        // 判断是否为空,如果为空则进行填充
-        if (fieldValue == null) {
-            setFieldValByName("age", 66, metaObject);
-        }
-        setFieldValByName("is_delete", 0,metaObject);
+
+        this.setFieldValByName("age",66,metaObject);
+
+        this.setFieldValByName("isDelete", false, metaObject);
     }
 
     /**
@@ -28,9 +26,6 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
      */
     @Override
     public void updateFill(MetaObject metaObject) {
-        Object fieldValue = getFieldValByName("age", metaObject);
-        if (fieldValue == null) {
-            setFieldValByName("age", 66, metaObject);
-        }
+        this.setFieldValByName("age",66,metaObject);
     }
 }
