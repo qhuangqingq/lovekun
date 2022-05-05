@@ -9,6 +9,7 @@ public enum CodeEnum {
     private String message;
 
     CodeEnum(int code,String message){
+
         this.code=code;
         this.message=message;
     }
