@@ -3,6 +3,7 @@ package com.example.lovekun.config.mycode;
 import lombok.Data;
 
 @Data
+
 public class AbExcept extends RuntimeException{
     private int code;
 
