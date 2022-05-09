@@ -5,9 +5,10 @@ import com.example.lovekun.dao.studentMapper;
 import com.example.lovekun.entity.Student;
 import com.example.lovekun.service.studentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
-
+@Service
 public class studentServiceImpl extends ServiceImpl<studentMapper, Student>  implements studentService {
     @Autowired
     private studentMapper smapper;

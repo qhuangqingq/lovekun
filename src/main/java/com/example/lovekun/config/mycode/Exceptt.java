@@ -8,7 +8,6 @@ public class Exceptt {
     @ResponseBody
     @ExceptionHandler(value = Exception.class)
     public Result errorHandler(Exception ex) {
-
         return new Result(CodeEnum.unkon,ex.getMessage());
     }
 
