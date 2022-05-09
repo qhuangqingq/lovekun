@@ -2,7 +2,6 @@ package com.example.lovekun.config.mycode;
 
 
 public enum CodeEnum {
-
     success(200,"success"),
     nosuccess(6000,"未认证"),
     unkon(8000,"服务端异常");

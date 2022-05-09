@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 
 public class AbExcept extends RuntimeException{
+
     private int code;
 
     public AbExcept(CodeEnum codeEnum, String msg){
