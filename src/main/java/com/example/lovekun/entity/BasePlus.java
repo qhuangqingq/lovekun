@@ -23,8 +23,8 @@ public class BasePlus<T extends Model> extends Model {
      */
     @TableLogic
     @TableField(value = "is_delete",fill = FieldFill.INSERT)
-    @JsonIgnore
-    private boolean isDelete;
+    @JsonIgnore()
+    private boolean delFlag;
 
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private int age;

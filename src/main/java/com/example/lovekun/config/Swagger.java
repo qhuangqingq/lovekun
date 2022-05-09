@@ -31,7 +31,7 @@ public class Swagger {
 
     private ApiInfo apiInfo(){
         return new ApiInfoBuilder()
-                .title("Kitty API Doc")
+                .title("swagger接口")
                 .description("This is a restful api document of Kitty.")
                 .version("1.0")
                 .build();
