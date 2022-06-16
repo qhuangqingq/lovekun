@@ -1,4 +1,4 @@
-package com.example.lovekun.contronller;
+package com.example.lovekun.controller;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import io.swagger.annotations.ApiOperation;

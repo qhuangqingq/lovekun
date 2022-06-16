@@ -1,4 +1,4 @@
-package com.example.lovekun.contronller;
+package com.example.lovekun.controller;
 
 
 import com.example.lovekun.config.mycode.AbExcept;
@@ -23,7 +23,7 @@ import java.util.List;
 @Api(value = "学生查询接口")
 @RestController
 @RequestMapping("/UserController")
-public class TeacherController extends BaseController<ITeacherService,Teacher>{
+public class TeacherController extends BaseController<ITeacherService,Teacher> {
     @Autowired
     private studentMapper smapper;
     @Autowired

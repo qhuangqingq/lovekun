@@ -1,4 +1,4 @@
-package com.example.lovekun.contronller;
+package com.example.lovekun.controller;
 
 
 import com.example.lovekun.entity.Student;
@@ -9,19 +9,28 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import java.lang.reflect.Field;
 
 @Api(value = "学生查询接口")
 @RestController
 @RequestMapping("/studentController")
-public class StudentController extends BaseController<studentService, Student>{
+public class StudentController extends BaseController<studentService, Student> {
 
 
     @ApiOperation(value = "获取int", notes = "获取int")
     @PostMapping(value = "/getint")
     private Integer getList(){
-        int a=10;
-        int b=11;
+        Student student=new Student();
+        Field[] fields =student.getClass().getFields();
         return null;
+    }
+
+    public static void main(String[] args) throws IllegalAccessException {
+
+        Student student=new Student();
+        student.setName("testName");
+        Field[] fields =student.getClass().getDeclaredFields();
+        fields[0].setAccessible(true);
+        System.out.println(fields[0].get(student));
     }
 }

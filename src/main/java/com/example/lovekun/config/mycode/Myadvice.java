@@ -1,6 +1,5 @@
 package com.example.lovekun.config.mycode;
 
-import com.alibaba.fastjson.JSONArray;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
@@ -9,7 +8,7 @@ import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
-@ControllerAdvice(basePackages = "com.example.lovekun.contronller")
+@ControllerAdvice(basePackages = "com.example.lovekun.controller")
 public class Myadvice implements ResponseBodyAdvice {
 
 

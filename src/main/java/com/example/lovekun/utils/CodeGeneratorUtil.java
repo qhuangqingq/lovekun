@@ -20,24 +20,27 @@ public class CodeGeneratorUtil {
     public static void main(String[] args) {
 
         // 项目包路径
-        String parent = "org.gocom.coframe";
+        String parent = "com.example.lovekun";
         // 数据库连接地址
-        String url = "jdbc:oracle:thin:@120.78.81.46:1521:orcl";
+//        String url = "jdbc:oracle:thin:@120.78.82.41:1521:orcl";
+        String url = "jdbc:mysql://localhost:3306/di70?serverTimezone=UTC";
         // 数据库驱动
-        String driver = "oracle.jdbc.driver.OracleDriver";
+//        String driver = "oracle.jdbc.driver.OracleDriver";
+
+        String driver = "com.mysql.cj.jdbc.Driver";
         // 用户名
-        String user = "STGDB";
+        String user = "root";
         // 密码
-        String pwd = "STGDB";
+        String pwd = "root";
 
         // 代码生成器
         AutoGenerator mpg = new AutoGenerator();
 
         // 获取项目路径 这里只会获取到idea工作目录 例 C:\private-idea-workspace\5-21
         //String projectPath = System.getProperty("D:\\IdeaProjects\\gdceg\\server\\EOS_Microservices_5.1.0_CoFrame_Source");
-        String projectPath = "D:\\work\\gzjz\\EOS_Microservices_5.1.0_CoFrame_Source";
+        String projectPath = "D:\\project\\lovekun";
                 // 全局配置                      在这需要指定到java源码包目录
-        setGlobalConfig(mpg, projectPath + "\\coframe-sync\\src\\main\\java");
+        setGlobalConfig(mpg, projectPath + "\\src\\main\\java");
 
         // 数据源配置
         setDataSourceConfig(mpg, url, driver, user, pwd);
@@ -117,7 +120,8 @@ public class CodeGeneratorUtil {
         dsc.setUsername(user);
         dsc.setPassword(pwd);
         // 设置数据库类型
-        dsc.setDbType(DbType.ORACLE);
+//        dsc.setDbType(DbType.ORACLE);
+        dsc.setDbType(DbType.MYSQL);
         mpg.setDataSource(dsc);
     }
 
@@ -129,20 +133,23 @@ public class CodeGeneratorUtil {
      */
     private static PackageConfig setPackageConfig(AutoGenerator mpg, String parent) {
         PackageConfig pc = new PackageConfig();
-        String moduleName = scanner("模块名");
-//        pc.setModuleName(moduleName);
-        // 即  src/main/java  目录下的项目包路径
         pc.setParent(parent);
-        pc.setController("controller." + moduleName);
-        pc.setEntity("entity." + moduleName);
-        pc.setService("service." + moduleName);
-        pc.setServiceImpl("service." + moduleName + ".impl");
-        pc.setMapper("dao.capital." + moduleName);
-        /*pc.setController("controller");
+
+        //生成模块
+//        String moduleName = scanner("模块名");
+//        pc.setModuleName(moduleName);
+//        pc.setController("controller." + moduleName);
+//        pc.setEntity("entity." + moduleName);
+//        pc.setService("service." + moduleName);
+//        pc.setServiceImpl("service." + moduleName + ".impl");
+//        pc.setMapper("dao." + moduleName);
+        // 即  src/main/java  目录下的项目包路径
+
+        pc.setController("controller");
         pc.setEntity("entity");
         pc.setService("service");
-        pc.setServiceImpl("service.impl");
-        pc.setMapper("dao.capital");*/
+        pc.setServiceImpl("service.serviceImpl");
+        pc.setMapper("dao");
         mpg.setPackageInfo(pc);
         return pc;
     }
@@ -176,7 +183,7 @@ public class CodeGeneratorUtil {
             public String outputFile(TableInfo tableInfo) {
                 System.out.println("path2:"+projectPath);
                 // 自定义输出文件名 ， 如果你 Entity 设置了前后缀、此处注意 xml 的名称会跟着发生变化！！
-                return projectPath + "\\coframe-portal\\src\\main\\resources\\mapper\\capital\\"
+                return projectPath + "\\src\\main\\resources\\mapper\\"
                         + CamelUtil.underlineToCamel(tableInfo.getName() != null ? tableInfo.getName().toLowerCase().substring(1) : "") + "Mapper" + StringPool.DOT_XML;
             }
         });
@@ -212,11 +219,11 @@ public class CodeGeneratorUtil {
 //         公共父类
 //        strategy.setSuperControllerClass("你自己的父类控制器,没有就不用设置!");
         // 写于父类中的公共字段
-        strategy.setSuperEntityColumns("id");
+//        strategy.setSuperEntityColumns("id");
         strategy.setInclude(scanner("表名，多个英文逗号分割").split(","));
         strategy.setControllerMappingHyphenStyle(true);
         //strategy.setTablePrefix(pc.getModuleName() + "_");
-        strategy.setTablePrefix(new String[] { "T_" });
+//        strategy.setTablePrefix(new String[] { "T_" });
         mpg.setStrategy(strategy);
     }
 }
