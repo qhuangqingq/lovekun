@@ -1,5 +1,6 @@
 package com.example.lovekun.config.mycode;
 
+import com.example.lovekun.utils.DataSourceUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
@@ -25,6 +26,7 @@ public class Myadvice implements ResponseBodyAdvice {
     @Override
     public Result beforeBodyWrite(Object o, MethodParameter methodParameter, MediaType mediaType, Class aClass, ServerHttpRequest serverHttpRequest, ServerHttpResponse serverHttpResponse) {
         ObjectMapper mapper=new ObjectMapper();
+        DataSourceUtil.clearDB();
         if(o!=null){
 
             return  new Result(CodeEnum.success,o);

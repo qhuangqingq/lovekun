@@ -1,13 +1,16 @@
 package com.example.lovekun.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
+import org.hibernate.annotations.GenericGenerator;
+import org.springframework.data.annotation.Id;
 
+import javax.persistence.GeneratedValue;
 import java.io.Serializable;
+import java.util.UUID;
 
 /**
  * <p>
@@ -28,7 +31,7 @@ public class TableColumnHis implements Serializable {
     /**
      * 表id
      */
-    private Integer tableId;
+    private String tableId;
 
     private String columnName;
 
@@ -38,14 +41,21 @@ public class TableColumnHis implements Serializable {
 
     private String columnLength;
 
-    @TableId(value = "id", type = IdType.AUTO)
-    private Integer id;
+    @Id
+    @GeneratedValue(generator="system-uuid")
+    @GenericGenerator(name="system-uuid",strategy="uuid")//使用uuid的主键注解
+    private String id;
 
     private int version;
 
     private String useState;
 
-    private Integer doId;
+    private String doId;
+
+    @TableField(exist = false)
+    private String type;
+
+
     /**
      * 列精度
      */
@@ -55,6 +65,7 @@ public class TableColumnHis implements Serializable {
     }
 
     public TableColumnHis(TableColumns tableColumns){
+        this.id= UUID.randomUUID().toString();
         this.tableId=tableColumns.getTableId();
         this.columnComment=tableColumns.getColumnComment();
         this.columnLength=tableColumns.getColumnLength();

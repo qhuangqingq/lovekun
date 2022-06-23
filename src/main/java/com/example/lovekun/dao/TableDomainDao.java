@@ -23,4 +23,6 @@ public interface TableDomainDao extends BaseMapper<TableDomain> {
                                                 @Param("limit") Integer limit,
                                                 @Param("offset")Integer offset
                                                 );
+    @Select("select count(*) from ${tableName}")
+    int getCount(@Param("tableName")String tableName);
 }

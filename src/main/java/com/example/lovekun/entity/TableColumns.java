@@ -1,14 +1,15 @@
 package com.example.lovekun.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.activerecord.Model;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
+import org.hibernate.annotations.GenericGenerator;
+import org.springframework.data.annotation.Id;
 
+import javax.persistence.GeneratedValue;
 import java.io.Serializable;
 
 /**
@@ -27,12 +28,14 @@ public class TableColumns extends Model<TableColumns> implements Serializable {
 
     private static final long serialVersionUID=1L;
 
-    @TableId(value = "id", type = IdType.AUTO)
-    private Integer id;
+    @Id
+    @GeneratedValue(generator="system-uuid")
+    @GenericGenerator(name="system-uuid",strategy="uuid")//使用uuid的主键注解
+    private String id;
     /**
      * 表id
      */
-    private Integer tableId;
+    private String tableId;
     /**
      * 列名
      */
@@ -63,5 +66,4 @@ public class TableColumns extends Model<TableColumns> implements Serializable {
      */
     @TableField(exist = false)
     private String type;
-
 }

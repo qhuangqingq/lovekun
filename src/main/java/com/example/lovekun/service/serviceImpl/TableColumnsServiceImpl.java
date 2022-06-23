@@ -15,12 +15,17 @@ import com.example.lovekun.service.ITableColumnHisService;
 import com.example.lovekun.service.ITableColumnsService;
 import com.example.lovekun.service.ITableDomainHisService;
 import com.example.lovekun.service.ITableDomainService;
+import com.example.lovekun.utils.UploadUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -28,9 +33,13 @@ import java.sql.Statement;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -43,6 +52,8 @@ import java.util.Optional;
 @Service
 public class TableColumnsServiceImpl extends ServiceImpl<TableColumnDao, TableColumns> implements ITableColumnsService {
 
+
+
     @Autowired
     private ITableDomainHisService domainHisService;
 
@@ -51,23 +62,29 @@ public class TableColumnsServiceImpl extends ServiceImpl<TableColumnDao, TableCo
     @Autowired
     private ITableColumnHisService columnHisService;
 
-    @Value(value = "${spring.datasource.driver-class-name}")
+    @Value(value = "${spring.datasource.di70.driver-class-name}")
     private String driver;
 
-    @Value(value = "${spring.datasource.url}")
+    @Value(value = "${spring.datasource.di70.jdbc-url}")
     private String url;
 
-    @Value(value = "${spring.datasource.username}")
+    @Value(value = "${spring.datasource.di70.username}")
     private String userName;
 
-    @Value(value = "${spring.datasource.password}")
+    @Value(value = "${spring.datasource.di70.password}")
     private String password;
     @Autowired
     private TableDomainDao domainDao;
 
+    @Resource
+    private UploadUtil uploadUtil;
+
+
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void insert(List<TableColumns> tableColumns, TableDomain domain)  {
+        TableColumns idColumn=new TableColumns();
+        idColumn.setColumnComment("id").setColumnName("id").setColumnLength("50").setColumnType("string");
         domain.setVersion(1);
         try {
             Integer.parseInt(domain.getTableName());
@@ -81,9 +98,10 @@ public class TableColumnsServiceImpl extends ServiceImpl<TableColumnDao, TableCo
         //执行sql
         try {
             inittable(sql,domain.getTableName());
-
+            tableColumns.add(idColumn);
             TableDomainHis domainHis=new TableDomainHis(domain);
             //插入表生成记录
+            domain.setId(UUID.randomUUID().toString());
             domain.insert();
             domainHis.setDoId(domain.getId());
             //插入表生成记录历史记录
@@ -94,13 +112,14 @@ public class TableColumnsServiceImpl extends ServiceImpl<TableColumnDao, TableCo
             for (TableColumns vo:tableColumns) {
                 vo.setTableId(domain.getId());
                 vo.setVersion(domain.getVersion());
+                vo.setId(UUID.randomUUID().toString());
                 vo.insert();
                 hisList.add(new TableColumnHis(vo));
             }
             columnHisService.saveBatch(hisList);
         } catch (Exception throwables) {
 //            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            throw  new AbExcept(CodeEnum.unkon,"sql执行异常");
+            throw  new AbExcept(CodeEnum.unkon,throwables.getMessage());
         }
 
 
@@ -118,9 +137,16 @@ public class TableColumnsServiceImpl extends ServiceImpl<TableColumnDao, TableCo
      * @return
      */
     @Override
-    public List<Map<String,Object>> getTableDataByName(String  tableName,Integer limit,Integer offset) {
-        List<Map<String,Object>> list=domainDao.getTableDataByName(tableName,limit,offset);
-        return list;
+    public  HashMap<String,Object>  getTableDataByName(String  tableName,Integer limit,Integer offset) {
+        int count=domainDao.getCount(tableName);
+        List<Map<String,Object>> list = new ArrayList<>();
+        if(count>0){
+         list=domainDao.getTableDataByName(tableName,limit,offset);
+        }
+        HashMap<String,Object> map=new HashMap<>();
+        map.put("dataList",list);
+        map.put("count",count);
+        return map;
     }
 
     /**
@@ -132,14 +158,14 @@ public class TableColumnsServiceImpl extends ServiceImpl<TableColumnDao, TableCo
         if(!Optional.ofNullable(map.get("tableId")).isPresent()){
             throw  new AbExcept(CodeEnum.unkon,"请输入tableId");
         }
-        Integer tableId= Integer.valueOf(String.valueOf(map.get("tableId")));
+        String tableId= String.valueOf(map.get("tableId"));
         TableDomain byId = domainService.getById(tableId);
         LambdaQueryWrapper<TableColumns> queryWrapper=new LambdaQueryWrapper<>();
         queryWrapper.eq(TableColumns::getTableId,tableId);
         List<TableColumns> list = this.list(queryWrapper);
         StringBuffer buffer=new StringBuffer("insert into "+byId.getTableName());
-        StringBuffer columnSql=new StringBuffer("(");
-        StringBuffer valueSql=new StringBuffer("(");
+        StringBuffer columnSql=new StringBuffer("(id,");
+        StringBuffer valueSql=new StringBuffer("('"+ UUID.randomUUID()+"',");
         for (TableColumns vo:list) {
             if(Optional.ofNullable(map.get(vo.getColumnName())).isPresent()){
                 if("date".equals(vo.getColumnType())){
@@ -176,53 +202,62 @@ public class TableColumnsServiceImpl extends ServiceImpl<TableColumnDao, TableCo
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateColumn(List<TableColumns> list1) {
-        Integer tableId = list1.get(0).getTableId();
+    public HashMap<String,Object> updateColumn(List<TableColumns> list1) {
+        HashMap<String,Object> map=new HashMap<>();
+        String tableId = list1.get(0).getTableId();
+        map.put("tableId",tableId);
         LambdaQueryWrapper<TableColumns> queryWrapper=new LambdaQueryWrapper();
         queryWrapper.eq(TableColumns::getTableId,tableId);
         List<TableColumns> list = this.list(queryWrapper);
-        TableDomain byId = null;
-        if(Optional.ofNullable(list.get(0).getTableId()).isPresent()) {
-             byId = domainService.getById(list.get(0).getTableId());
-        }
+        TableDomain byId = domainService.getById(list1.get(0).getTableId());
         List<String> sqlList=new ArrayList<>();
-        for (TableColumns vo:list1) {
+        for (int i = 0; i < list1.size(); i++) {
+            TableColumns vo=list1.get(i);
+            if("id".equals(vo.getColumnName().toLowerCase(Locale.ROOT))){
+                throw new AbExcept(CodeEnum.unkon,"id为系统默认列，不能将列名改为id");
+            }
             sqlList.add(getUpdateSql(list,vo,byId.getTableName()));
         }
+
         //修改数据库表结构
         try {
             dosql(sqlList);
         } catch (Exception e) {
-            throw new AbExcept(CodeEnum.unkon,"修改失败");
+            throw new AbExcept(CodeEnum.unkon,e.getMessage());
         }
 
         //记录修改操作
         LambdaQueryWrapper<TableDomainHis> queryWrapper1=new LambdaQueryWrapper<>();
         queryWrapper1.eq(TableDomainHis::getDoId,byId.getId()).orderByDesc(TableDomainHis::getVersion);
         List<TableDomainHis> list2 = domainHisService.list(queryWrapper1);
+
         int version=list2.get(0).getVersion()+1;
-
-
+        map.put("version",version);
         byId.setVersion(version);
         domainService.updateById(byId);
         TableDomainHis domainHis=new TableDomainHis(byId);
+        domainHis.setId(UUID.randomUUID().toString());
         domainHisService.save(domainHis);
-        for (TableColumns vo:list1) {
+        for (int i = 0; i < list1.size(); i++) {
+            TableColumns vo=list1.get(i);
             vo.setVersion(version);
             TableColumnHis columnHis=new TableColumnHis(vo);
-            if("update".equals(vo.getType())){
-                this.updateById(vo);
-                columnHisService.save(columnHis);
-            }else if("add".equals(vo.getType())){
+            columnHis.setVersion(version);
+            if("add".equals(vo.getType())){
+                vo.setId(UUID.randomUUID().toString());
                 vo.insert();
                 columnHis.setDoId(vo.getId());
+                columnHis.setId(UUID.randomUUID().toString());
                 columnHisService.save(columnHis);
             }else if("delete".equals(vo.getType())){
                 this.removeById(vo.getId());
             }else {
-                throw new AbExcept(CodeEnum.unkon,"数据列修改状态不正确");
+                this.updateById(vo);
+                columnHis.setId(UUID.randomUUID().toString());
+                columnHisService.save(columnHis);
             }
         }
+        return map;
     }
 
     /**
@@ -231,71 +266,197 @@ public class TableColumnsServiceImpl extends ServiceImpl<TableColumnDao, TableCo
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void changeVersion(List<TableColumnHis> columnHisList) {
-        LambdaQueryWrapper<TableColumns> queryWrapper=new LambdaQueryWrapper<>();
-        queryWrapper.eq(TableColumns::getTableId,columnHisList.get(0).getTableId());
-        List<TableColumns> list = this.list(queryWrapper);
-        TableDomain byId = null;
-        if(Optional.ofNullable(list.get(0).getTableId()).isPresent()) {
-            byId = domainService.getById(list.get(0).getTableId());
-        }
-        List<String> sqlList=new ArrayList<>();
-        //记录数据库原来就有的列
-        List<Integer> idList=new ArrayList<>();
-        //循环该版本列，数据表有这个列就更新列属性，没有就新增列
-        for (TableColumnHis his:columnHisList) {
-            Boolean flag=Boolean.TRUE;
-            for (TableColumns vo:list) {
-                if(vo.getId()==his.getDoId()||vo.getColumnName().equals(his.getColumnName())){
-                    flag=Boolean.FALSE;
-                    idList.add(vo.getId());
-                    StringBuffer buffer=new StringBuffer(" ALTER TABLE "+byId.getTableName()+" change "+vo.getColumnName()+" ");
-                    buffer.append(getTypeSql(his.getColumnName(), his.getColumnType(), Integer.parseInt(his.getColumnLength()), his.getColumnDefinition(), his.getColumnComment()));
-                    sqlList.add(buffer.toString());
+    public void changeVersion(List<TableColumnHis> columnHisList, TableDomain byId, List<TableColumns> list) {
+        Integer version=columnHisList.get(0).getVersion();
+        String tableId=byId.getId();
 
-                    BeanUtils.copyProperties(his,vo);
-                    vo.setId(his.getDoId());
-                    vo.updateById();
+        List<String> sqlList=new ArrayList<>();
+        List<String> sqlDeleteList=new ArrayList<>();
+        //记录数据库原来就有的列
+        List<String> idList=new ArrayList<>();
+        //循环该版本列，数据表有这个列就更新列属性，没有就新增列
+        if(columnHisList.size()>0){
+            for (int i = 0; i < columnHisList.size(); i++) {
+                TableColumnHis his=columnHisList.get(i);
+                Boolean flag=Boolean.TRUE;
+                for (int j = 0; j < list.size(); j++) {
+                    TableColumns vo=list.get(j);
+                    String voId=vo.getId();
+                    if(vo.getId().equals(his.getDoId())||vo.getColumnName().equals(his.getColumnName())){
+                        if((!vo.getColumnType().equals("number"))&&(his.getColumnType().equals("number"))){
+                            throw new AbExcept(CodeEnum.unkon,vo.getColumnName()+"不能将"+vo.getColumnType()+"类型转成number类型");
+                        }
+                        flag=Boolean.FALSE;
+                        int length=0;
+                        if(Optional.ofNullable(his.getColumnLength()).isPresent()){
+                            length=Integer.parseInt(his.getColumnLength());
+                        }
+                        idList.add(vo.getId());
+                        StringBuffer buffer=new StringBuffer(" ALTER TABLE "+byId.getTableName()+" change "+vo.getColumnName()+" ");
+                        buffer.append(getTypeSql(his.getColumnName(), his.getColumnType(), length, his.getColumnDefinition(), his.getColumnComment()));
+                        sqlList.add(buffer.toString());
+                        //把his的属性copy给vo
+                        BeanUtils.copyProperties(his,vo);
+                        vo.setId(voId);
+                        vo.updateById();
+                    }
+                }
+                if(flag){
+                    //数据库表不存在这个列，新增列
+                    TableColumns doma=new TableColumns();
+                    BeanUtils.copyProperties(his,doma);
+                    doma.setId(UUID.randomUUID().toString());
+                    doma.insert();
+                    //刷新列历史信息
+                    his.setDoId(doma.getId());
+                    columnHisService.updateById(his);
+                    int length=0;
+                    if(Optional.ofNullable(his.getColumnLength()).isPresent()){
+                        length=Integer.parseInt(his.getColumnLength());
+                    }
+                    StringBuffer buffer=new StringBuffer(" ALTER TABLE "+byId.getTableName()+" add ");
+                    buffer.append(getTypeSql(his.getColumnName(), his.getColumnType(), length, his.getColumnDefinition(), his.getColumnComment()));
+                    sqlList.add(buffer.toString());
                 }
             }
-            if(flag){
-                //数据库表不存在这个列，新增列
-                TableColumns doma=new TableColumns();
-                BeanUtils.copyProperties(his,doma);
-                doma.setId(null);
-                doma.insert();
-                //刷新列历史信息
-                his.setDoId(doma.getId());
-                columnHisService.updateById(his);
 
-                StringBuffer buffer=new StringBuffer(" ALTER TABLE "+byId.getTableName()+" add ");
-                buffer.append(getTypeSql(his.getColumnName(), his.getColumnType(), Integer.parseInt(his.getColumnLength()), his.getColumnDefinition(), his.getColumnComment()));
-                sqlList.add(buffer.toString());
-            }
         }
         //删除掉数据库中多余的字段
-        for (TableColumns vo:list) {
+        for (int i = 0; i < list.size(); i++) {
+            TableColumns vo=list.get(i);
             Boolean flag=Boolean.TRUE;
-            for (Integer item:idList) {
-                if (vo.getId()==item){
+            for (int j = 0; j < idList.size(); j++) {
+                String item=idList.get(j);
+                if (vo.getId().toLowerCase(Locale.ROOT).equals(item.toLowerCase(Locale.ROOT))){
                     flag=Boolean.FALSE;
                 }
             }
             if (flag){
                 vo.deleteById();
                 StringBuffer buffer=new StringBuffer(" ALTER TABLE "+byId.getTableName()+" drop "+vo.getColumnName());
-                sqlList.add(buffer.toString());
+                sqlDeleteList.add(buffer.toString());
             }
         }
+        //将删除sql操作放在前面，先执行删除
+        sqlDeleteList.addAll(sqlList);
+
 
         //更新表信息
-        byId.setVersion(columnHisList.get(0).getVersion());
+        byId.setVersion(version);
         domainService.updateById(byId);
         try {
-            dosql(sqlList);
+            dosql(sqlDeleteList);
         } catch (Exception e) {
             throw e;
         }
+    }
+
+    /**
+     * 更新表数据
+     * @param map
+     */
+    @Override
+    public void updateData(Map<String, Object> map) {
+        if(StringUtils.isBlank(map.get("tableId").toString().trim())){
+            throw  new AbExcept(CodeEnum.unkon,"请输入tableId");
+        }
+        if(StringUtils.isBlank(map.get("id").toString().trim())){
+            throw  new AbExcept(CodeEnum.unkon,"请输入id");
+        }
+        String tableId= String.valueOf(map.get("tableId"));
+        TableDomain byId = domainService.getById(tableId);
+        LambdaQueryWrapper<TableColumns> queryWrapper=new LambdaQueryWrapper<>();
+        queryWrapper.eq(TableColumns::getTableId,tableId);
+        List<TableColumns> list = this.list(queryWrapper);
+        StringBuffer buffer=new StringBuffer(" update "+byId.getTableName()+" set ");
+        for (TableColumns vo:list) {
+            if(Optional.ofNullable(map.get(vo.getColumnName())).isPresent()){
+                if("date".equals(vo.getColumnType())){
+                    SimpleDateFormat df1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    try {
+                        df1.parse(map.get(vo.getColumnName()).toString());
+                    } catch (ParseException e) {
+                        throw  new AbExcept(CodeEnum.unkon,"请输入规范日期格式：yyyy-MM-dd HH:mm:ss");
+                    }
+                }
+                buffer.append(vo.getColumnName() +" = '"+map.get(vo.getColumnName())+"',");
+
+            }
+
+        }
+        String sql=buffer.toString().substring(0,
+                buffer.toString().length() - 1)
+                + " where id='" +map.get("id")+"'";
+
+        List<String> sqlList=new ArrayList<>();
+        sqlList.add(sql);
+        dosql(sqlList);
+    }
+
+    /**
+     * 删除表数据
+     * @param map
+     */
+    @Override
+    public void deleteData(Map<String, Object> map) {
+        if(StringUtils.isBlank(map.get("tableId").toString().trim())){
+            throw  new AbExcept(CodeEnum.unkon,"请输入tableId");
+        }
+        if(StringUtils.isBlank(map.get("id").toString().trim())){
+            throw  new AbExcept(CodeEnum.unkon,"请输入id");
+        }
+        String tableId= String.valueOf(map.get("tableId"));
+        TableDomain byId = domainService.getById(tableId);
+        StringBuffer buffer=new StringBuffer(" delete from "+byId.getTableName()+"  where id='"+map.get("id")+"'");
+        List<String> sqlList=new ArrayList<>();
+        sqlList.add(buffer.toString());
+        dosql(sqlList);
+    }
+
+    /**
+     * 新增版本
+     * @param tableColumnHisList
+     * @return
+     */
+    @Override
+    public HashMap<String, Object> addVersion(List<TableColumnHis> tableColumnHisList) {
+        List<TableColumnHis> tableColumnHis = tableColumnHisList.stream().filter(e ->!"delete".equals(e.getType())).collect(Collectors.toList());
+        HashMap<String,Object> map=new HashMap<>();
+        String tableId = tableColumnHis.get(0).getTableId();
+        map.put("tableId",tableId);
+        TableDomain byId = domainService.getById(tableId);
+        LambdaQueryWrapper<TableDomainHis> queryWrapper1=new LambdaQueryWrapper<>();
+        queryWrapper1.eq(TableDomainHis::getDoId,byId.getId()).orderByDesc(TableDomainHis::getVersion);
+        List<TableDomainHis> list2 = domainHisService.list(queryWrapper1);
+        int version=list2.get(0).getVersion()+1;
+        TableDomainHis domainHis=new TableDomainHis(byId);
+        domainHis.setId(UUID.randomUUID().toString());
+        domainHis.setVersion(version);
+        domainHisService.save(domainHis);
+
+        for (int i = 0; i < tableColumnHis.size(); i++) {
+            TableColumnHis vo=tableColumnHis.get(i);
+            vo.setVersion(version);
+            vo.setId(UUID.randomUUID().toString());
+            columnHisService.save(vo);
+        }
+
+       map.put("version",version);
+
+        return map;
+    }
+
+    @Override
+    public HashMap<String, Object> uploadFile(HttpServletRequest request, MultipartFile multipartFile, String type) {
+        HashMap<String,Object> map=new HashMap<>();
+        try {
+            String s = uploadUtil.uploadFile(request, multipartFile, type);
+            map.put("url",s);
+            return map;
+        } catch (Exception e) {
+            throw new AbExcept(CodeEnum.unkon,"上传失败："+e.getMessage());
+        }
+
     }
 
 
@@ -306,8 +467,11 @@ public class TableColumnsServiceImpl extends ServiceImpl<TableColumnDao, TableCo
      * @return
      */
     private String getInsertSql(List<TableColumns> tableColumns, TableDomain domain){
-        StringBuffer sql = new StringBuffer("create table "+domain.getTableName().toString() +"( ");
+        StringBuffer sql = new StringBuffer("create table "+domain.getTableName().toString() +"( id varchar(50) not null,");
         for (TableColumns vo : tableColumns) {
+            if("id".equals(vo.getColumnName().toLowerCase(Locale.ROOT))){
+                throw new AbExcept(CodeEnum.unkon,"id列为系统默认新增数据列，请删除");
+            }
             String fieldname = vo.getColumnName().trim();
             String type = vo.getColumnType();
             String businame = vo.getColumnComment();
@@ -335,8 +499,8 @@ public class TableColumnsServiceImpl extends ServiceImpl<TableColumnDao, TableCo
                     sql.toString().length() - 1)
                     + " ) ";
         }
-        if (Optional.ofNullable(domain.getRamake()).isPresent()){
-            creatTableSql+=" COMMENT ='" +domain.getRamake()+"'";
+        if (Optional.ofNullable(domain.getRemark()).isPresent()){
+            creatTableSql+=" COMMENT ='" +domain.getRemark()+"'";
         }
         return creatTableSql;
     }
@@ -352,16 +516,19 @@ public class TableColumnsServiceImpl extends ServiceImpl<TableColumnDao, TableCo
                         + ") COMMENT '" + businame + "'";
             }
         } else if ("number".equals(type)) {
-            if (length > 38) {
-                length = 38;
+            if (length > 30) {
+                length = 30;
             }
             if (definitionV == null || definitionV.length() == 0) {
                 sql=fieldname + " numeric(" + length
                         + ") COMMENT '" + businame + "'";
             } else {
-                int definition = Integer.parseInt(definitionV);
-                if (definition > 38) {
-                    definition = 38;
+                int definition = 0;
+                if(Optional.ofNullable(definitionV).isPresent()){
+                    definition=Integer.parseInt(definitionV);
+                }
+                if (definition > 30) {
+                    definition = 30;
                 }
                 sql=fieldname + " numeric(" + length + ","
                         + definition + ")  COMMENT '" + businame + "'";
@@ -375,6 +542,14 @@ public class TableColumnsServiceImpl extends ServiceImpl<TableColumnDao, TableCo
         }  else if ("int".equals(type)) { //
             sql=fieldname + " int(" + length
                     + ") COMMENT '" + businame + "'";
+        } else{
+            if (length > 4000) {
+                sql=fieldname + " VARCHAR(4000) COMMENT '"
+                        + businame + "'";
+            } else {
+                sql=fieldname + " VARCHAR(" + length
+                        + ") COMMENT '" + businame + "'";
+            }
         }
         return sql;
     }
@@ -437,7 +612,7 @@ public class TableColumnsServiceImpl extends ServiceImpl<TableColumnDao, TableCo
         List<String> sqlList=new ArrayList<>();
         StringBuffer sql = new StringBuffer(" ALTER TABLE "+byId.getTableName() +" rename to " + domain.getTableName() +";");
         sqlList.add(sql.toString());
-        StringBuffer sql1=new StringBuffer(" ALTER TABLE "+domain.getTableName() +" comment '" + domain.getRamake() +"';");
+        StringBuffer sql1=new StringBuffer(" ALTER TABLE "+domain.getTableName() +" comment '" + domain.getRemark() +"';");
         sqlList.add(sql1.toString());
         dosql(sqlList);
         domainService.updateById(domain);
@@ -452,34 +627,31 @@ public class TableColumnsServiceImpl extends ServiceImpl<TableColumnDao, TableCo
      */
     private String getUpdateSql( List<TableColumns> list,TableColumns tableColumn,String tableName){
 
-        if(!Optional.ofNullable(tableColumn.getType()).isPresent()){
-            throw new AbExcept(CodeEnum.unkon,"修改状态不能为空");
-        }
         if(!Optional.ofNullable(tableColumn.getColumnName()).isPresent()){
             throw new AbExcept(CodeEnum.unkon,"列名不能为空");
         }
         StringBuffer buffer=new StringBuffer(" ALTER TABLE "+tableName);
         String fieldname=tableColumn.getColumnName();
         String columntType=tableColumn.getColumnType();
-        Integer length= Integer.parseInt(tableColumn.getColumnLength());
+        Integer length=0;
+        if(Optional.ofNullable(tableColumn.getColumnLength()).isPresent()){
+            length= Integer.parseInt(tableColumn.getColumnLength());
+        }
         String definitionV=  tableColumn.getColumnDefinition();
         String columnComment=  tableColumn.getColumnComment();
         if(Optional.ofNullable(tableColumn.getId()).isPresent()){
-            for (TableColumns vo:list) {
-                if("update".equals(tableColumn.getType())){
-                    if(vo.getId()==tableColumn.getId()){
-                        buffer.append(" change "+vo.getColumnName()+" ");
-                        buffer.append(getTypeSql(fieldname, columntType, length, definitionV, columnComment));
-                    }
-
-                }else if("delete".equals(tableColumn.getType())) {
-                    if(vo.getId()==tableColumn.getId()){
+            for (int i = 0; i < list.size(); i++) {
+                TableColumns vo=list.get(i);
+                if("delete".equals(tableColumn.getType())) {
+                    if(vo.getId().equals(tableColumn.getId())){
                         buffer.append(" DROP "+tableColumn.getColumnName());
                     }
                 }else{
-                    throw new AbExcept(CodeEnum.unkon,"数据格式不正确");
+                    if(vo.getId().equals(tableColumn.getId())){
+                        buffer.append(" change "+vo.getColumnName()+" ");
+                        buffer.append(getTypeSql(fieldname, columntType, length, definitionV, columnComment));
+                    }
                 }
-
             }
         }else{
              if("add".equals(tableColumn.getType())) {
@@ -508,21 +680,23 @@ public class TableColumnsServiceImpl extends ServiceImpl<TableColumnDao, TableCo
             }
             Connection conn = DriverManager.getConnection(url, userName, password);
             Statement stat = conn.createStatement();
-
-            // 判断表是否存在，如果存在则什么都不做，否则创建表
             try {
+                conn.setAutoCommit(false);
                 for (String sql:list) {
                     stat.executeUpdate(sql);
                 }
+                conn.commit();
             } catch (Exception e) {
-                throw new AbExcept(CodeEnum.unkon,"sql执行异常");
+                conn.rollback();
+                System.out.println(e);
+                throw new AbExcept(CodeEnum.unkon,e.getMessage());
             } finally {
                 // 释放资源
                 stat.close();
                 conn.close();
             }
         } catch (Exception e) {
-            throw new AbExcept(CodeEnum.unkon,"sql执行异常");
+            throw new AbExcept(CodeEnum.unkon,e.getMessage());
         }
     }
 
