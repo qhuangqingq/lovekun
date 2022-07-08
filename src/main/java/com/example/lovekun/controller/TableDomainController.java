@@ -4,6 +4,7 @@ package com.example.lovekun.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.lovekun.config.mycode.AbExcept;
 import com.example.lovekun.config.mycode.CodeEnum;
+import com.example.lovekun.constant.DataTypeEnum;
 import com.example.lovekun.entity.ChangeVersionLog;
 import com.example.lovekun.entity.TableColumnHis;
 import com.example.lovekun.entity.TableColumns;
@@ -17,6 +18,7 @@ import com.example.lovekun.service.ITableDomainService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,9 +27,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -42,7 +46,7 @@ import java.util.UUID;
  */
 @Api(value = "获取表数据接口")
 @RestController
-@RequestMapping("/table-domain")
+@RequestMapping(value = "/table-domain",produces = MediaType.ALL_VALUE,consumes = MediaType.ALL_VALUE)
 @CrossOrigin(allowedHeaders = "*")
 public class TableDomainController {
     @Autowired
@@ -72,7 +76,7 @@ public class TableDomainController {
     @ApiOperation(value = "根据表id和版本查出历史版本表结构", notes = "根据表id和版本查出历史版本表结构")
     @GetMapping("getByTableIdAndVersion")
 
-    public  List<TableColumnHis>  getByTableIdAndVersion(String  id,Integer version) {
+    public  List<TableColumnHis>  getByTableIdAndVersion(String  id,Integer version,String database) {
         LambdaQueryWrapper<TableColumnHis> queryWrapper=new LambdaQueryWrapper<>();
         queryWrapper.eq(TableColumnHis::getTableId,id).eq(TableColumnHis::getVersion,version);
         List<TableColumnHis> list = columnHisService.list(queryWrapper);
@@ -127,7 +131,14 @@ public class TableDomainController {
 
     @ApiOperation(value = "切换版本", notes = "切换版本")
     @PostMapping("changeVersion")
-    public  void changeVersion(@RequestBody TableColumnHis his) {
+    public  void changeVersion(HttpServletRequest request, @RequestBody TableColumnHis his) {
+        String database = request.getParameter("database");
+        DataTypeEnum dataTypeEnum;
+        try {
+            dataTypeEnum= DataTypeEnum.valueOf(database.toLowerCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw  new AbExcept(CodeEnum.unkon,"找不到枚举对应的数据库");
+        }
 
         ChangeVersionLog log=new ChangeVersionLog();
         log.setId(UUID.randomUUID().toString()).setCreateTime(new Date()).setTableId(his.getTableId()).setParameter(his.toString());
@@ -147,7 +158,7 @@ public class TableDomainController {
                 list = columnsService.list(queryWrapper1);
                 log.setData(list.toString()).setTableName(byId.getTableName());
             }
-            columnsService.changeVersion(columnHis,byId,list);
+            columnsService.changeVersion(columnHis,byId,list,dataTypeEnum.getType());
             log.setResult("成功");
         } catch (Exception e) {
             log.setResult("失败："+e.getMessage());
@@ -176,7 +187,11 @@ public class TableDomainController {
         LambdaQueryWrapper<TableDomainHis> queryWrapper=new LambdaQueryWrapper<>();
         queryWrapper.eq(TableDomainHis::getDoId,id).orderByDesc(TableDomainHis::getVersion);
         List<TableDomainHis>  list = domainHisService.list(queryWrapper);
+        List<TableDomain> list1 = domainService.list();
         return list;
+//        String database=type;
+//        DataTypeEnum dataTypeEnum = DataTypeEnum.valueOf(database);
+//        return null;
     }
 }
 

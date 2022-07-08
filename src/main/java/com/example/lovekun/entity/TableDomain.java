@@ -2,7 +2,6 @@ package com.example.lovekun.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.extension.activerecord.Model;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -25,7 +24,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @TableName("table_domain")
-public class TableDomain extends Model<TableDomain>  implements Serializable {
+public class TableDomain   implements Serializable {
 
     private static final long serialVersionUID=1L;
 

@@ -25,4 +25,7 @@ public interface TableDomainDao extends BaseMapper<TableDomain> {
                                                 );
     @Select("select count(*) from ${tableName}")
     int getCount(@Param("tableName")String tableName);
+
+    @Select("${sql}")
+    Object dosql(@Param("sql")String sql);
 }

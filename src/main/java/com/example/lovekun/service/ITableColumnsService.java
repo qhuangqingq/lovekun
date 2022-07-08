@@ -21,7 +21,7 @@ import java.util.Map;
  */
 public interface ITableColumnsService extends IService<TableColumns> {
 
-    void insert(List<TableColumns> columns, TableDomain domain) ;
+    void insert(List<TableColumns> columns, TableDomain domain,String database) ;
 
     void updateTable(List<TableColumns> list, TableDomain tableDomain);
 
@@ -29,9 +29,9 @@ public interface ITableColumnsService extends IService<TableColumns> {
 
     void insertData(Map<String, Object> map);
 
-    HashMap<String,Object> updateColumn(List<TableColumns> list1);
+//    HashMap<String,Object> updateColumn(List<TableColumns> list1);
 
-    void changeVersion(List<TableColumnHis> columnHis, TableDomain byId, List<TableColumns> list);
+    void changeVersion(List<TableColumnHis> columnHis, TableDomain byId, List<TableColumns> list,String database);
 
     void updateData(Map<String, Object> map);
 

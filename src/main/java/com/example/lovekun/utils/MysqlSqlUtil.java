@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-public  class CreateTableSqlUtil {
+public class MysqlSqlUtil {
     /**
      *
      * @param tableColumns 前端传过来的要新增的列信息
@@ -22,8 +22,7 @@ public  class CreateTableSqlUtil {
             throw  new AbExcept(CodeEnum.unkon,"表名不能为空");
         }
 
-        String typeDabase="mysql";
-        StringBuffer sql = new StringBuffer("create table "+domain.getTableName() +"( id VARCHAR(255) not null,");
+        StringBuffer sql = new StringBuffer("create table "+domain.getTableName() +"( id VARCHAR(50) not null,");
         for (TableColumns vo : tableColumns) {
             if("id".equals(vo.getColumnName().toLowerCase(Locale.ROOT))){
                 throw new AbExcept(CodeEnum.unkon,"id列为系统默认新增数据列，请删除");
@@ -47,15 +46,18 @@ public  class CreateTableSqlUtil {
                 lengthV = "38";
             }
             int length = Integer.parseInt(lengthV);
-            if("mysql".equals(typeDabase.toLowerCase(Locale.ROOT))){
-                sql.append(getMysqlTypeSql(fieldname, type, length, definitionV, businame)+",");
-            }else if("dm".equals(typeDabase.toLowerCase(Locale.ROOT))){
-                sql.append(getDMTypeSql(fieldname, type, length, definitionV, businame)+",");
-            }
-
+            sql.append(getMysqlTypeSql(fieldname, type, length, definitionV, businame)+",");
         }
-
-        return getEnd(sql,tableColumns,domain,typeDabase);
+        StringBuffer creatTableSql = new StringBuffer();
+        if (sql.toString().endsWith(",")) {
+            creatTableSql.append(sql.toString().substring(0,
+                    sql.toString().length() - 1)
+                    + " ) ") ;
+        }
+        if (Optional.ofNullable(domain.getRemark()).isPresent()){
+            creatTableSql.append(" COMMENT ='" +domain.getRemark()+"'");
+        }
+        return creatTableSql.toString();
     }
 
 
@@ -67,10 +69,6 @@ public  class CreateTableSqlUtil {
      * @return
      */
     public static  String updateTable( List<TableColumns> list,TableColumns tableColumn,String tableName){
-        String typeDabase="mysql";
-        if(!Optional.ofNullable(tableColumn.getType()).isPresent()){
-            throw new AbExcept(CodeEnum.unkon,"修改状态不能为空");
-        }
         if(!Optional.ofNullable(tableColumn.getColumnName()).isPresent()){
             throw new AbExcept(CodeEnum.unkon,"列名不能为空");
         }
@@ -86,25 +84,15 @@ public  class CreateTableSqlUtil {
         if(Optional.ofNullable(tableColumn.getId()).isPresent()){
             //循环找到修改列对应的数据库列
             for (TableColumns vo:list) {
-                if("update".equals(tableColumn.getType())){
-                    if(vo.getId()==tableColumn.getId()){
-                        buffer.append(" change "+vo.getColumnName()+" ");
-                        if("mysql".equals(typeDabase.toLowerCase(Locale.ROOT))){
-                            buffer.append(getMysqlTypeSql(fieldname, columntType, length, definitionV, columnComment));
-                        }else if("dm".equals(typeDabase.toLowerCase(Locale.ROOT))){
-                            buffer.append(getDMTypeSql(fieldname, columntType, length, definitionV, columnComment));
-                            buffer.append(";");
-                            buffer.append(" COMMENT ON COLUMN "+tableName+"."+vo.getColumnName()+" is '"+vo.getColumnComment()+"';");
-                        }
-
-                    }
-
-                }else if("delete".equals(tableColumn.getType())) {
+                 if("delete".equals(tableColumn.getType())) {
                     if(vo.getId()==tableColumn.getId()){
                         buffer.append(" DROP "+tableColumn.getColumnName());
                     }
                 }else{
-                    throw new AbExcept(CodeEnum.unkon,"数据格式不正确");
+                    if(vo.getId()==tableColumn.getId()){
+                        buffer.append(" change "+vo.getColumnName()+" ");
+                        buffer.append(getMysqlTypeSql(fieldname, columntType, length, definitionV, columnComment));
+                    }
                 }
 
             }
@@ -112,13 +100,7 @@ public  class CreateTableSqlUtil {
             //没有id就是新增
             if("add".equals(tableColumn.getType())) {
                 buffer.append(" add ");
-                if("mysql".equals(typeDabase.toLowerCase(Locale.ROOT))){
-                    buffer.append(getMysqlTypeSql(fieldname, columntType, length, definitionV, columnComment));
-                }else if("dm".equals(typeDabase.toLowerCase(Locale.ROOT))){
-                    buffer.append(getDMTypeSql(fieldname, columntType, length, definitionV, columnComment));
-                    buffer.append(";");
-                    buffer.append(" COMMENT ON COLUMN "+tableName+"."+fieldname+" is '"+columnComment+"';");
-                }
+                buffer.append(getMysqlTypeSql(fieldname, columntType, length, definitionV, columnComment));
             }else{
                 throw new AbExcept(CodeEnum.unkon,"数据格式不正确");
             }
@@ -128,11 +110,14 @@ public  class CreateTableSqlUtil {
     }
 
 
-    private static String getMysqlTypeSql(String fieldname,String type,Integer length ,String definitionV,String businame){
+    public static String getMysqlTypeSql(String fieldname,String type,Integer length ,String definitionV,String businame){
         String sql="";
         if ("string".equals(type)) {
             if (length > 4000) {
                 sql=fieldname + " VARCHAR(4000) COMMENT '"
+                        + businame + "'";
+            } else if(length < 10){
+                sql=fieldname + " VARCHAR(50) COMMENT '"
                         + businame + "'";
             } else {
                 sql=fieldname + " VARCHAR(" + length
@@ -160,7 +145,7 @@ public  class CreateTableSqlUtil {
             sql=fieldname + " timestamp COMMENT '"
                     + businame + "'";
         } else if ("file".equals(type) || "picture".equals(type)) { // 文件
-            sql=fieldname + " VARCHAR(4000) COMMENT '"
+            sql=fieldname + " VARCHAR(255) COMMENT '"
                     + businame + "'";
         }  else if ("int".equals(type)) { //
             sql=fieldname + " int(" + length
@@ -169,63 +154,5 @@ public  class CreateTableSqlUtil {
         return sql;
     }
 
-    private static String getDMTypeSql(String fieldname,String type,Integer length ,String definitionV,String businame){
-        String sql="";
-        if ("string".equals(type)) {
-            if (length > 4000) {
-                sql=fieldname + " VARCHAR(4000)";
-            } else {
-                sql=fieldname + " VARCHAR(" + length
-                        + ") ";
-            }
-        } else if ("number".equals(type)) {
-            if (length > 38) {
-                length = 38;
-            }
-            if (definitionV == null || definitionV.length() == 0) {
-                sql=fieldname + " numeric(" + length
-                        + ") ";
-            } else {
-                int definition = 0;
-                if(Optional.ofNullable(definitionV).isPresent()){
-                    definition=Integer.parseInt(definitionV);
-                }
-                if (definition > 38) {
-                    definition = 38;
-                }
-                sql=fieldname + " numeric(" + length + ","
-                        + definition + ")  ";
-            }
-        } else if ("date".equals(type)) {
-            sql=fieldname + " timestamp ";
-        } else if ("file".equals(type) || "picture".equals(type)) { // 文件
-            sql=fieldname + " VARCHAR(4000) ";
-        }  else if ("int".equals(type)) { //
-            sql=fieldname + " int(" + length
-                    + ") ";
-        }
-        return sql;
-    }
 
-    private static String getEnd(StringBuffer sql,List<TableColumns> tableColumns, TableDomain domain,String type){
-        StringBuffer creatTableSql = new StringBuffer();
-        if (sql.toString().endsWith(",")) {
-            creatTableSql.append(sql.toString().substring(0,
-                    sql.toString().length() - 1)
-                    + " ) ") ;
-        }
-        if("mysql".equals(type.toLowerCase(Locale.ROOT))){
-            if (Optional.ofNullable(domain.getRemark()).isPresent()){
-                creatTableSql.append(" COMMENT ='" +domain.getRemark()+"'");
-            }
-        }else if("dm".equals(type.toLowerCase(Locale.ROOT))){
-            creatTableSql.append(";");
-            creatTableSql.append("COMMENT ON TABLE "+domain.getTableName()+" is '"+domain.getRemark()+"';");
-            for (TableColumns vo:tableColumns) {
-                creatTableSql.append(" COMMENT ON COLUMN "+domain.getTableName()+"."+vo.getColumnName()+" is '"+vo.getColumnComment()+"';");
-            }
-        }
-
-        return creatTableSql.toString();
-    }
 }

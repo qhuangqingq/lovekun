@@ -2,6 +2,7 @@ package com.example.lovekun.config;
 
 import com.example.lovekun.controller.BaseController;
 import com.example.lovekun.utils.DataSourceUtil;
+import org.springframework.lang.Nullable;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.servlet.http.HttpServletRequest;
@@ -17,8 +18,7 @@ public class Interceptor extends BaseController implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         try {
-            String[] split = request.getRequestURI().split("/");
-            String database=split[split.length-2];
+            String database = request.getParameter("database");
             if("esb8".equals(database)){
                 DataSourceUtil.setDB(database);
             }
@@ -30,6 +30,10 @@ public class Interceptor extends BaseController implements HandlerInterceptor {
         }
         return true;//如果设置为false时，被请求时，拦截器执行到此处将不会继续操作
         //如果设置为true时，请求将会继续执行后面的操作
+    }
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, @Nullable Exception ex) throws Exception {
+        DataSourceUtil.clearDB();
     }
 
 }

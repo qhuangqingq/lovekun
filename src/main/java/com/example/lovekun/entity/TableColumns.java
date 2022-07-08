@@ -2,7 +2,6 @@ package com.example.lovekun.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.extension.activerecord.Model;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -24,7 +23,7 @@ import java.io.Serializable;
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @TableName("table_column")
-public class TableColumns extends Model<TableColumns> implements Serializable {
+public class TableColumns  implements Serializable {
 
     private static final long serialVersionUID=1L;
 

@@ -1,6 +1,5 @@
 package com.example.lovekun.config.mycode;
 
-import com.example.lovekun.utils.DataSourceUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
@@ -12,7 +11,6 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 @ControllerAdvice(basePackages = "com.example.lovekun.controller")
 public class Myadvice implements ResponseBodyAdvice {
 
-
     @Override
     public boolean supports(MethodParameter methodParameter, Class aClass) {
         //获取当前处理请求的controller的方法
@@ -23,10 +21,10 @@ public class Myadvice implements ResponseBodyAdvice {
         return !method.equals(methodName);
     }
 
+
     @Override
     public Result beforeBodyWrite(Object o, MethodParameter methodParameter, MediaType mediaType, Class aClass, ServerHttpRequest serverHttpRequest, ServerHttpResponse serverHttpResponse) {
         ObjectMapper mapper=new ObjectMapper();
-        DataSourceUtil.clearDB();
         if(o!=null){
 
             return  new Result(CodeEnum.success,o);
