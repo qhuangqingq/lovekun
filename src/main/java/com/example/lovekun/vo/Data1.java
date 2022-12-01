@@ -7,5 +7,5 @@ import java.util.List;
 @Data
 public class Data1 {
 
-    private List<Data3> pois;
+    private List<Data3> entrances;
 }

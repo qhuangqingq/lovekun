@@ -11,6 +11,13 @@ public class ResourcesConfig implements WebMvcConfigurer {
      */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+//        registry.addResourceHandler("/swagger-ui.html")
+//                .addResourceLocations("classpath:/META-INF/resources/");
+//        registry.addResourceHandler("/webjars/**")
+//                .addResourceLocations("classpath:/META-INF/resources/webjars/");
+//        registry.addResourceHandler("/doc.html")
+//                .addResourceLocations("classpath:/META-INF/resources/");
+//        registry.addResourceHandler("/**").addResourceLocations("file:///" + uploadFileUrl);
         //获取文件的真实路径
         String testStudent = "D:/images/student/";
         registry.addResourceHandler("/student/**").addResourceLocations("file:"+testStudent);

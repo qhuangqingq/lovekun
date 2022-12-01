@@ -119,7 +119,6 @@ public class ExcelController {
         }
 
         list.get(0).setListImage(urlList);
-
         EasyExcel.write(out, StudentDto.class)
                 .registerWriteHandler(new CustomImageModifyHandler()).sheet().doWrite(list);
 

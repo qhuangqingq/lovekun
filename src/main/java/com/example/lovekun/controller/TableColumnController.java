@@ -1,10 +1,7 @@
 package com.example.lovekun.controller;
 
 
-import cn.hutool.crypto.SecureUtil;
-import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONUtil;
 import com.example.lovekun.config.mycode.AbExcept;
 import com.example.lovekun.config.mycode.CodeEnum;
 import com.example.lovekun.constant.DataTypeEnum;
@@ -28,11 +25,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 /**
  * <p>
@@ -161,9 +156,9 @@ public class TableColumnController {
     }
 
     @PostMapping(value = "getData")
-    @ApiOperation(value = "获取公交", notes = "获取数据库")
+    @ApiOperation(value = "获取公交", notes = "获取公交")
     public void getData(@RequestBody Data1 data) {
-        List<Data3> poi_list = data.getPois();
+        List<Data3> poi_list = data.getEntrances();
         for (Data3 vo:poi_list
              ) {
             String[] split = vo.getLocation().split(",");

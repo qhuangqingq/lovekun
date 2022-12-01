@@ -28,10 +28,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -534,102 +530,102 @@ public class TableColumnsServiceImpl extends ServiceImpl<TableColumnDao, TableCo
 //        return creatTableSql;
 //    }
 
-    private String getTypeSql(String fieldname,String type,Integer length ,String definitionV,String businame){
-        String sql="";
-        if ("string".equals(type)) {
-            if (length > 4000) {
-                sql=fieldname + " VARCHAR(4000) COMMENT '"
-                        + businame + "'";
-            } else {
-                sql=fieldname + " VARCHAR(" + length
-                        + ") COMMENT '" + businame + "'";
-            }
-        } else if ("number".equals(type)) {
-            if (length > 30) {
-                length = 30;
-            }
-            if (definitionV == null || definitionV.length() == 0) {
-                sql=fieldname + " numeric(" + length
-                        + ") COMMENT '" + businame + "'";
-            } else {
-                int definition = 0;
-                if(Optional.ofNullable(definitionV).isPresent()){
-                    definition=Integer.parseInt(definitionV);
-                }
-                if (definition > 30) {
-                    definition = 30;
-                }
-                sql=fieldname + " numeric(" + length + ","
-                        + definition + ")  COMMENT '" + businame + "'";
-            }
-        } else if ("date".equals(type)) {
-            sql=fieldname + " timestamp COMMENT '"
-                    + businame + "'";
-        } else if ("file".equals(type) || "picture".equals(type)) { // 文件
-            sql=fieldname + " VARCHAR(4000) COMMENT '"
-                    + businame + "'";
-        }  else if ("int".equals(type)) { //
-            sql=fieldname + " int(" + length
-                    + ") COMMENT '" + businame + "'";
-        } else{
-            if (length > 4000) {
-                sql=fieldname + " VARCHAR(4000) COMMENT '"
-                        + businame + "'";
-            } else {
-                sql=fieldname + " VARCHAR(" + length
-                        + ") COMMENT '" + businame + "'";
-            }
-        }
-        return sql;
-    }
+//    private String getTypeSql(String fieldname,String type,Integer length ,String definitionV,String businame){
+//        String sql="";
+//        if ("string".equals(type)) {
+//            if (length > 4000) {
+//                sql=fieldname + " VARCHAR(4000) COMMENT '"
+//                        + businame + "'";
+//            } else {
+//                sql=fieldname + " VARCHAR(" + length
+//                        + ") COMMENT '" + businame + "'";
+//            }
+//        } else if ("number".equals(type)) {
+//            if (length > 30) {
+//                length = 30;
+//            }
+//            if (definitionV == null || definitionV.length() == 0) {
+//                sql=fieldname + " numeric(" + length
+//                        + ") COMMENT '" + businame + "'";
+//            } else {
+//                int definition = 0;
+//                if(Optional.ofNullable(definitionV).isPresent()){
+//                    definition=Integer.parseInt(definitionV);
+//                }
+//                if (definition > 30) {
+//                    definition = 30;
+//                }
+//                sql=fieldname + " numeric(" + length + ","
+//                        + definition + ")  COMMENT '" + businame + "'";
+//            }
+//        } else if ("date".equals(type)) {
+//            sql=fieldname + " timestamp COMMENT '"
+//                    + businame + "'";
+//        } else if ("file".equals(type) || "picture".equals(type)) { // 文件
+//            sql=fieldname + " VARCHAR(4000) COMMENT '"
+//                    + businame + "'";
+//        }  else if ("int".equals(type)) { //
+//            sql=fieldname + " int(" + length
+//                    + ") COMMENT '" + businame + "'";
+//        } else{
+//            if (length > 4000) {
+//                sql=fieldname + " VARCHAR(4000) COMMENT '"
+//                        + businame + "'";
+//            } else {
+//                sql=fieldname + " VARCHAR(" + length
+//                        + ") COMMENT '" + businame + "'";
+//            }
+//        }
+//        return sql;
+//    }
 
 
-    /**
-     * 初始化生成表
-     * @param sql
-     * @param tableName
-     */
-    private void inittable( String sql,String tableName) throws Exception {
-
-        try {
-            //连接数据库
-            Class.forName(driver);
-
-            //测试url中是否包含useSSL字段，没有则添加设该字段且禁用
-            if( url.indexOf("?") == -1 ){
-                url = url + "?useSSL=false" ;
-            }
-            else if( url.indexOf("useSSL=false") == -1 || url.indexOf("useSSL=true") == -1 )
-            {
-                url = url + "&useSSL=false";
-            }
-            Connection conn = DriverManager.getConnection(url, userName, password);
-            Statement stat = conn.createStatement();
-            //获取数据库表名
-            ResultSet rs = conn.getMetaData().getTables(null, null, tableName, null);
-
-            // 判断表是否存在，如果存在则什么都不做，否则创建表
-            try {
-                if( rs.next() ){
-                    return;
-                }
-                else{
-                    // 先判断是否纯在表名，有则先删除表在创建表
-        //          stat.executeUpdate("DROP TABLE IF EXISTS sys_admin_divisions;CREATE TABLE sys_admin_divisions("
-                    stat.executeUpdate(sql);
-                }
-            } catch (Exception throwables) {
-                throw throwables;
-            } finally {
-                // 释放资源
-                stat.close();
-                conn.close();
-            }
-        } catch (Exception e) {
-            throw e;
-        }
-
-    }
+//    /**
+//     * 初始化生成表
+//     * @param sql
+//     * @param tableName
+//     */
+//    private void inittable( String sql,String tableName) throws Exception {
+//
+//        try {
+//            //连接数据库
+//            Class.forName(driver);
+//
+//            //测试url中是否包含useSSL字段，没有则添加设该字段且禁用
+//            if( url.indexOf("?") == -1 ){
+//                url = url + "?useSSL=false" ;
+//            }
+//            else if( url.indexOf("useSSL=false") == -1 || url.indexOf("useSSL=true") == -1 )
+//            {
+//                url = url + "&useSSL=false";
+//            }
+//            Connection conn = DriverManager.getConnection(url, userName, password);
+//            Statement stat = conn.createStatement();
+//            //获取数据库表名
+//            ResultSet rs = conn.getMetaData().getTables(null, null, tableName, null);
+//
+//            // 判断表是否存在，如果存在则什么都不做，否则创建表
+//            try {
+//                if( rs.next() ){
+//                    return;
+//                }
+//                else{
+//                    // 先判断是否纯在表名，有则先删除表在创建表
+//        //          stat.executeUpdate("DROP TABLE IF EXISTS sys_admin_divisions;CREATE TABLE sys_admin_divisions("
+//                    stat.executeUpdate(sql);
+//                }
+//            } catch (Exception throwables) {
+//                throw throwables;
+//            } finally {
+//                // 释放资源
+//                stat.close();
+//                conn.close();
+//            }
+//        } catch (Exception e) {
+//            throw e;
+//        }
+//
+//    }
 
     /**
      * 更新表（domain）
@@ -648,51 +644,51 @@ public class TableColumnsServiceImpl extends ServiceImpl<TableColumnDao, TableCo
         domainHisService.save(new TableDomainHis(domain));
     }
 
-    /**
-     * 构造更新表字段sql
-     * @param list 原列集合
-     * @param tableColumn 要修改的表的列
-     * @return
-     */
-    private String getUpdateSql( List<TableColumns> list,TableColumns tableColumn,String tableName){
-
-        if(!Optional.ofNullable(tableColumn.getColumnName()).isPresent()){
-            throw new AbExcept(CodeEnum.unkon,"列名不能为空");
-        }
-        StringBuffer buffer=new StringBuffer(" ALTER TABLE "+tableName);
-        String fieldname=tableColumn.getColumnName();
-        String columntType=tableColumn.getColumnType();
-        Integer length=0;
-        if(Optional.ofNullable(tableColumn.getColumnLength()).isPresent()){
-            length= Integer.parseInt(tableColumn.getColumnLength());
-        }
-        String definitionV=  tableColumn.getColumnDefinition();
-        String columnComment=  tableColumn.getColumnComment();
-        if(Optional.ofNullable(tableColumn.getId()).isPresent()){
-            for (int i = 0; i < list.size(); i++) {
-                TableColumns vo=list.get(i);
-                if("delete".equals(tableColumn.getType())) {
-                    if(vo.getId().equals(tableColumn.getId())){
-                        buffer.append(" DROP "+tableColumn.getColumnName());
-                    }
-                }else{
-                    if(vo.getId().equals(tableColumn.getId())){
-                        buffer.append(" change "+vo.getColumnName()+" ");
-                        buffer.append(getTypeSql(fieldname, columntType, length, definitionV, columnComment));
-                    }
-                }
-            }
-        }else{
-             if("add".equals(tableColumn.getType())) {
-                    buffer.append(" add ");
-                    buffer.append(getTypeSql(fieldname, columntType, length, definitionV, columnComment));
-             }else{
-                 throw new AbExcept(CodeEnum.unkon,"数据格式不正确");
-             }
-        }
-
-        return buffer.toString();
-    }
+//    /**
+//     * 构造更新表字段sql
+//     * @param list 原列集合
+//     * @param tableColumn 要修改的表的列
+//     * @return
+//     */
+//    private String getUpdateSql( List<TableColumns> list,TableColumns tableColumn,String tableName){
+//
+//        if(!Optional.ofNullable(tableColumn.getColumnName()).isPresent()){
+//            throw new AbExcept(CodeEnum.unkon,"列名不能为空");
+//        }
+//        StringBuffer buffer=new StringBuffer(" ALTER TABLE "+tableName);
+//        String fieldname=tableColumn.getColumnName();
+//        String columntType=tableColumn.getColumnType();
+//        Integer length=0;
+//        if(Optional.ofNullable(tableColumn.getColumnLength()).isPresent()){
+//            length= Integer.parseInt(tableColumn.getColumnLength());
+//        }
+//        String definitionV=  tableColumn.getColumnDefinition();
+//        String columnComment=  tableColumn.getColumnComment();
+//        if(Optional.ofNullable(tableColumn.getId()).isPresent()){
+//            for (int i = 0; i < list.size(); i++) {
+//                TableColumns vo=list.get(i);
+//                if("delete".equals(tableColumn.getType())) {
+//                    if(vo.getId().equals(tableColumn.getId())){
+//                        buffer.append(" DROP "+tableColumn.getColumnName());
+//                    }
+//                }else{
+//                    if(vo.getId().equals(tableColumn.getId())){
+//                        buffer.append(" change "+vo.getColumnName()+" ");
+//                        buffer.append(getTypeSql(fieldname, columntType, length, definitionV, columnComment));
+//                    }
+//                }
+//            }
+//        }else{
+//             if("add".equals(tableColumn.getType())) {
+//                    buffer.append(" add ");
+//                    buffer.append(getTypeSql(fieldname, columntType, length, definitionV, columnComment));
+//             }else{
+//                 throw new AbExcept(CodeEnum.unkon,"数据格式不正确");
+//             }
+//        }
+//
+//        return buffer.toString();
+//    }
 
 
 

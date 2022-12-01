@@ -15,7 +15,7 @@ import java.util.List;
 @ColumnWidth(25)
 @HeadStyle(horizontalAlignment = HorizontalAlignment.CENTER)
 @ContentStyle(horizontalAlignment = HorizontalAlignment.CENTER)
-public class StudentDto {
+public class  StudentDto {
 
     @ExcelProperty(value = "姓名",index = 0)
     private String name;
